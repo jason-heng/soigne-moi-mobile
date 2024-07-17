@@ -4,7 +4,6 @@ import axios from "axios"
 
 interface AuthState {
     token: string | null;
-    authenticated: boolean | null;
 }
 
 interface AuthProps {
@@ -23,7 +22,7 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }: PropsWithChildren) {
-    const [authState, setAuthState] = useState<AuthState>({ token: null, authenticated: null })
+    const [authState, setAuthState] = useState<AuthState>({ token: null })
 
     useEffect(() => {
         async function loadToken() {
@@ -31,8 +30,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
             if (token) {
                 setAuthState({
-                    token,
-                    authenticated: true
+                    token
                 })
 
                 axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
@@ -47,8 +45,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
             const res = await axios.post(`${API_URL}/doctor/auth`, { registrationNumber, password })
 
             setAuthState({
-                token: res.data.token,
-                authenticated: true
+                token: res.data.token
             })
 
             axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`
@@ -67,8 +64,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         axios.defaults.headers.common['Authorization'] = ''
 
         setAuthState({
-            token: null,
-            authenticated: false
+            token: null
         })
     }
 
