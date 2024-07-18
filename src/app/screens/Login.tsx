@@ -4,7 +4,7 @@ import { Button, Text, TextInput } from "react-native-paper";
 import colors from "../lib/Colors";
 import { useAuth } from "../context/AuthContext";
 
-export default function LoginPage() {
+export default function LoginScreen() {
     const { onLogin } = useAuth()
 
     const [registrationNumber, setRegistrationNumber] = useState("");

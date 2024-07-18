@@ -42,6 +42,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
     async function login(registrationNumber: string, password: string) {
         try {
+            console.log(`${API_URL}/doctor/auth`);
+
             const res = await axios.post(`${API_URL}/doctor/auth`, { registrationNumber, password })
 
             setAuthState({

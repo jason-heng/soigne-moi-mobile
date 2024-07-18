@@ -4,12 +4,21 @@ import axios, { AxiosError } from 'axios'
 import { API_URL, useAuth } from '../context/AuthContext'
 import { ActivityIndicator, IconButton, Searchbar, Text } from 'react-native-paper'
 import { formatDate } from '../lib/utils'
-import { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { NativeStackNavigationProp, NativeStackScreenProps } from '@react-navigation/native-stack'
 import { ScreensParamsList } from '../../App'
 import colors from '../lib/Colors'
 
-export default function Home({ navigation }: NativeStackScreenProps<ScreensParamsList, 'Home'>) {
-    const [stays, setStays] = useState<any[]>([])
+interface Stay {
+    id: number;
+    firstName: string;
+    lastName: string;
+    start: string;
+    end: string;
+    reason: string;
+}
+
+export default function HomeScreen({ navigation }: NativeStackScreenProps<ScreensParamsList, 'Home'>) {
+    const [stays, setStays] = useState<Stay[]>([])
     const [firstName, setFirstName] = useState('')
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState("")
@@ -20,7 +29,7 @@ export default function Home({ navigation }: NativeStackScreenProps<ScreensParam
         async function loadPatients() {
             try {
                 const res = await axios.get(`${API_URL}/stays/`)
-                setStays(res.data.stays)
+                setStays(res.data)
             } catch (e) {
                 const error = e as AxiosError
                 const status = (error.toJSON() as any).status
@@ -67,7 +76,7 @@ export default function Home({ navigation }: NativeStackScreenProps<ScreensParam
         )
     }
 
-    const visibleStays = stays.filter(stay => stay.reason.toLowerCase().includes(search.toLowerCase()) || stay.patient.firstName.toLowerCase().includes(search.toLowerCase()) || stay.patient.lastName.toLowerCase().includes(search.toLowerCase()))
+    const visibleStays = stays.filter(stay => stay.reason.toLowerCase().includes(search.toLowerCase()) || stay.firstName.toLowerCase().includes(search.toLowerCase()) || stay.lastName.toLowerCase().includes(search.toLowerCase()))
 
     return (
         <View style={{
@@ -89,41 +98,7 @@ export default function Home({ navigation }: NativeStackScreenProps<ScreensParam
             }}>
                 {visibleStays.length ?
                     visibleStays.map(stay => (
-                        <View
-                            key={stay.id}
-                            style={{
-                                flexDirection: 'row',
-                                backgroundColor: 'white',
-                                padding: 10,
-                                marginHorizontal: 2,
-                                marginVertical: 8,
-                                borderRadius: 10,
-                                elevation: 3,
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                shadowColor: '#52006A',
-                            }}
-                        >
-                            <View style={{
-                                gap: 5,
-
-                            }}>
-                                <View>
-                                    <Text variant='titleSmall'>{stay.patient.firstName} {stay.patient.lastName}</Text>
-                                    <Text style={{ opacity: 0.5 }}>{formatDate(stay.start)} - {formatDate(stay.end)}</Text>
-                                </View>
-                                <Text>{stay.reason}</Text>
-                            </View>
-                            <IconButton
-                                icon="magnify"
-                                iconColor={colors.primary}
-                                onPress={() =>
-                                    navigation.navigate("Patient", {
-                                        id: stay.id,
-                                        fullName: `${stay.patient.firstName} ${stay.patient.lastName}`
-                                    })}
-                            />
-                        </View>
+                        <Patient key={stay.id} stay={stay} navigation={navigation} />
                     )) :
                     <View style={{
                         flex: 1,
@@ -138,6 +113,45 @@ export default function Home({ navigation }: NativeStackScreenProps<ScreensParam
                     </View>
                 }
             </ScrollView>
+        </View>
+    )
+}
+
+function Patient({ stay, navigation }: { stay: Stay, navigation: NativeStackNavigationProp<ScreensParamsList, "Home", undefined> }) {
+    return (
+        <View
+            style={{
+                flexDirection: 'row',
+                backgroundColor: 'white',
+                padding: 10,
+                marginHorizontal: 2,
+                marginVertical: 8,
+                borderRadius: 10,
+                elevation: 3,
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                shadowColor: '#52006A',
+            }}
+        >
+            <View style={{
+                gap: 5,
+
+            }}>
+                <View>
+                    <Text variant='titleSmall'>{stay.firstName} {stay.lastName}</Text>
+                    <Text style={{ opacity: 0.5 }}>{formatDate(stay.start)} - {formatDate(stay.end)}</Text>
+                </View>
+                <Text>{stay.reason}</Text>
+            </View>
+            <IconButton
+                icon="magnify"
+                iconColor={colors.primary}
+                onPress={() =>
+                    navigation.navigate("Patient", {
+                        id: stay.id,
+                        fullName: `${stay.firstName} ${stay.lastName}`
+                    })}
+            />
         </View>
     )
 }

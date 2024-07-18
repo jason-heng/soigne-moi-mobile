@@ -2,11 +2,11 @@ import { Button, DefaultTheme, IconButton, PaperProvider } from 'react-native-pa
 import { NavigationContainer } from "@react-navigation/native"
 import { AuthProvider, useAuth } from './app/context/AuthContext';
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import Home from "./app/screens/Home";
+import HomeScreen from "./app/screens/Home";
 import Login from "./app/screens/Login";
 import { StatusBar } from 'expo-status-bar';
 import colors from './app/lib/Colors';
-import Patient from './app/screens/Patient';
+import PatientScreen from './app/screens/Patient';
 
 export type ScreensParamsList = {
   Home: undefined,
@@ -45,7 +45,7 @@ function Layout() {
           <>
             <Stack.Screen
               name="Home"
-              component={Home}
+              component={HomeScreen}
               options={{
                 title: 'SoigneMoi',
                 headerTintColor: colors.secondary,
@@ -60,7 +60,7 @@ function Layout() {
               }} />
             <Stack.Screen
               name="Patient"
-              component={Patient}
+              component={PatientScreen}
               options={({ route }) => ({
                 title: route.params.fullName,
                 headerTintColor: colors.secondary,
