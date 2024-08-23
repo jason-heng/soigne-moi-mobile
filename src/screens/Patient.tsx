@@ -174,6 +174,8 @@ function PrescriptionCard({ stayId, prescription, setPrescription }: { stayId: n
     const [nameError, setNameError] = useState("")
     const [dosageError, setDosageError] = useState("")
 
+    const [pending, setPending] = useState(false)
+
     function toggleModal() {
         setModalVisible(prev => !prev);
         setName("")
@@ -184,8 +186,10 @@ function PrescriptionCard({ stayId, prescription, setPrescription }: { stayId: n
         setNameError("")
         setDosageError("")
 
+        setPending(true)
+
         try {
-            const { data } = await axios.post(`${API_URL}/stays/${stayId}/prescription`, {
+            const { data } = await axios.post(`${API_URL}/doctor/stays/${stayId}/prescription`, {
                 name,
                 dosage
             })
@@ -199,12 +203,14 @@ function PrescriptionCard({ stayId, prescription, setPrescription }: { stayId: n
             setNameError(errors.title)
             setDosageError(errors.description)
         }
+
+        setPending(false)
     }
 
     async function editEndDate(event: DateTimePickerEvent, selectedDate: Date | undefined) {
         if (selectedDate && event.type === 'set') {
             try {
-                await axios.put(`${API_URL}/stays/${stayId}/prescription`, {
+                await axios.put(`${API_URL}/doctor/stays/${stayId}/prescription`, {
                     end: selectedDate.toISOString()
                 })
 
@@ -278,7 +284,7 @@ function PrescriptionCard({ stayId, prescription, setPrescription }: { stayId: n
                             gap: 10
                         }}>
                             <Button mode='contained-tonal' onPress={toggleModal}>Annuler</Button>
-                            <Button mode='contained' onPress={handleSave}>Ajouter</Button>
+                            <Button mode='contained' disabled={pending} loading={pending} onPress={handleSave}>Ajouter</Button>
                         </View>
                     </View>
                 </Modal>
@@ -296,6 +302,8 @@ function OpinionsCard({ stayId, opinions, setOpinions }: { stayId: number, opini
     const [titleError, setTitleError] = useState("")
     const [descriptionError, setDescriptionError] = useState("")
 
+    const [pending, setPending] = useState(false)
+
     function toggleModal() {
         setModalVisible(prev => !prev);
         setTitle("")
@@ -305,8 +313,11 @@ function OpinionsCard({ stayId, opinions, setOpinions }: { stayId: number, opini
     async function handleSave() {
         setTitleError("")
         setDescriptionError("")
+
+        setPending(true)
+
         try {
-            const { data } = await axios.post(`${API_URL}/stays/${stayId}/opinions`, {
+            const { data } = await axios.post(`${API_URL}/doctor/stays/${stayId}/opinions`, {
                 title,
                 description
             })
@@ -320,6 +331,8 @@ function OpinionsCard({ stayId, opinions, setOpinions }: { stayId: number, opini
             setTitleError(errors.title)
             setDescriptionError(errors.description)
         }
+
+        setPending(false)
     }
 
     return (
@@ -388,7 +401,7 @@ function OpinionsCard({ stayId, opinions, setOpinions }: { stayId: number, opini
                             gap: 10
                         }}>
                             <Button mode='contained-tonal' onPress={toggleModal}>Annuler</Button>
-                            <Button mode='contained' onPress={handleSave}>Ajouter</Button>
+                            <Button mode='contained' disabled={pending} loading={pending} onPress={handleSave}>Ajouter</Button>
                         </View>
                     </View>
                 </Modal>

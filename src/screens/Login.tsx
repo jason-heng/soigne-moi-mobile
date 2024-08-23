@@ -11,6 +11,7 @@ export default function LoginScreen() {
     const [password, setPassword] = useState("");
     const [registrationNumberError, setRegistrationNumberError] = useState<string>()
     const [passwordError, setPasswordError] = useState<string>()
+    const [pending, setPending] = useState(false)
 
     const registrationNumberInputRef = useRef<RNTextInput>(null);
     const passwordInputRef = useRef<RNTextInput>(null);
@@ -18,6 +19,7 @@ export default function LoginScreen() {
     async function login() {
         setRegistrationNumberError(undefined)
         setPasswordError(undefined)
+        setPending(true)
 
         const result = await onLogin!(registrationNumber, password)
 
@@ -29,6 +31,8 @@ export default function LoginScreen() {
             setRegistrationNumberError(result.errors.registrationNumber)
             setPasswordError(result.errors.password)
         }
+
+        setPending(false)
     }
 
     const dismissKeyboardAndUnfocusInputs = () => {
@@ -97,7 +101,7 @@ export default function LoginScreen() {
                     {passwordError && <Text style={{ color: 'red', opacity: 0.5}}>{passwordError}</Text>}
                 </View>
 
-                <Button onPress={login} mode="contained" style={{
+                <Button onPress={login} disabled={pending} loading={pending} mode="contained" style={{
                     borderRadius: 5
                 }}>Se Connecter</Button>
             </View>
