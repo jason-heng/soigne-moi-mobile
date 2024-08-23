@@ -1,6 +1,8 @@
 import * as SecureStore from "expo-secure-store"
-import { PropsWithChildren, createContext, useContext, useEffect, useState } from "react";
+import { PropsWithChildren, createContext, useCallback, useContext, useEffect, useState } from "react";
 import axios from "axios"
+import * as SplashScreen from 'expo-splash-screen';
+import { View } from "react-native";
 
 interface AuthState {
     token: string | null;
@@ -15,6 +17,8 @@ interface AuthProps {
 const TOKEN_KEY = 'soinge-moi-jwt'
 export const API_URL = process.env.EXPO_PUBLIC_API_URL
 
+SplashScreen.preventAutoHideAsync();
+
 const AuthContext = createContext<AuthProps>({})
 
 export function useAuth() {
@@ -23,6 +27,7 @@ export function useAuth() {
 
 export function AuthProvider({ children }: PropsWithChildren) {
     const [authState, setAuthState] = useState<AuthState>({ token: null })
+    const [appIsReady, setAppIsReady] = useState(false);
 
     useEffect(() => {
         async function loadToken() {
@@ -35,6 +40,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
                 axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
             }
+
+            setAppIsReady(true);
         }
 
         loadToken()
@@ -68,6 +75,16 @@ export function AuthProvider({ children }: PropsWithChildren) {
         })
     }
 
+    const onLayoutRootView = useCallback(async () => {
+        if (appIsReady) {
+            await SplashScreen.hideAsync();
+        }
+    }, [appIsReady]);
+
+    if (!appIsReady) {
+        return null;
+    }
+
     const value: AuthProps = {
         authState,
         onLogin: login,
@@ -75,6 +92,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
     }
 
     return (
-        <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+        <AuthContext.Provider value={value}>
+            <View onLayout={onLayoutRootView} style={{ flex: 1, }}>
+                {children}
+            </View>
+        </AuthContext.Provider>
     )
 }
