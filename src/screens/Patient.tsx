@@ -1,5 +1,5 @@
-import { ScrollView, StyleProp, View, ViewStyle } from 'react-native'
-import React, { Dispatch, PropsWithChildren, SetStateAction, useEffect, useState } from 'react'
+import { RefreshControl, ScrollView, StyleProp, View, ViewStyle } from 'react-native'
+import React, { Dispatch, PropsWithChildren, SetStateAction, useCallback, useEffect, useState } from 'react'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { ScreensParamsList } from '../../App'
 import axios, { AxiosError } from 'axios'
@@ -47,34 +47,43 @@ export default function PatientScreen({ route, navigation }: NativeStackScreenPr
     const [prescription, setPrescription] = useState<Prescription>()
     const [opinions, setOpinions] = useState<Opinion[]>([])
     const [loading, setLoading] = useState(true)
+    const [refreshing, setRefreshing] = useState(false)
 
     const { onLogout } = useAuth()
+
+    const getPatientData = useCallback(async () => {
+        try {
+            const res = await axios.get<{
+                stay: Stay,
+                prescription: Prescription,
+                opinions: Opinion[]
+            }>(`${API_URL}/doctor/stays/${id}/`)
+
+            setStay(res.data.stay)
+            setPrescription(res.data.prescription)
+            setOpinions(res.data.opinions)
+        } catch (e) {
+            const error = e as AxiosError
+            const status = (error.toJSON() as any).status
+
+            if (status === 403) {
+                onLogout!()
+            } else if (status === 404) {
+                navigation.navigate('Home')
+            }
+        }
+    }, [])
+
+    const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        await getPatientData()
+        setRefreshing(false)
+    }, []);
 
     useEffect(() => {
         async function load() {
             setLoading(true)
-
-            try {
-                const res = await axios.get<{
-                    stay: Stay,
-                    prescription: Prescription,
-                    opinions: Opinion[]
-                }>(`${API_URL}/stays/${id}/`)
-
-                setStay(res.data.stay)
-                setPrescription(res.data.prescription)
-                setOpinions(res.data.opinions)
-            } catch (e) {
-                const error = e as AxiosError
-                const status = (error.toJSON() as any).status
-
-                if (status === 403) {
-                    onLogout!()
-                } else if (status === 404) {
-                    navigation.navigate('Home')
-                }
-            }
-
+            await getPatientData()
             setLoading(false)
         }
 
@@ -110,6 +119,10 @@ export default function PatientScreen({ route, navigation }: NativeStackScreenPr
             contentContainerStyle={{
                 padding: 15
             }}
+
+            refreshControl={
+                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
 
             style={{
                 backgroundColor: 'white',
@@ -172,12 +185,12 @@ function PrescriptionCard({ stayId, prescription, setPrescription }: { stayId: n
         setDosageError("")
 
         try {
-            const res = await axios.post(`${API_URL}/stays/${stayId}/prescription`, {
+            const { data } = await axios.post(`${API_URL}/stays/${stayId}/prescription`, {
                 name,
                 dosage
             })
 
-            setPrescription(res.data)
+            setPrescription(data)
 
             toggleModal()
         } catch (error) {
@@ -293,12 +306,12 @@ function OpinionsCard({ stayId, opinions, setOpinions }: { stayId: number, opini
         setTitleError("")
         setDescriptionError("")
         try {
-            const res = await axios.post(`${API_URL}/stays/${stayId}/opinions`, {
+            const { data } = await axios.post(`${API_URL}/stays/${stayId}/opinions`, {
                 title,
                 description
             })
 
-            setOpinions(res.data)
+            setOpinions(data)
 
             toggleModal()
         } catch (error) {

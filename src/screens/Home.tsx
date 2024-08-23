@@ -1,5 +1,5 @@
-import { ScrollView, View } from 'react-native'
-import React, { useEffect, useState } from 'react'
+import { RefreshControl, ScrollView, View } from 'react-native'
+import React, { useCallback, useEffect, useState } from 'react'
 import axios, { AxiosError } from 'axios'
 import { API_URL, useAuth } from '../context/AuthContext'
 import { ActivityIndicator, IconButton, Searchbar, Text } from 'react-native-paper'
@@ -21,43 +21,50 @@ export default function HomeScreen({ navigation }: NativeStackScreenProps<Screen
     const [stays, setStays] = useState<Stay[]>([])
     const [firstName, setFirstName] = useState('')
     const [loading, setLoading] = useState(true)
+    const [refreshing, setRefreshing] = useState(false)
     const [search, setSearch] = useState("")
 
     const { onLogout } = useAuth()
 
+    const getDoctor = useCallback(async () => {
+        try {
+            const { data } = await axios.get<{ firstName: string }>(`${API_URL}/doctor/`)
+            setFirstName(data.firstName)
+        } catch (e) {
+            const error = e as AxiosError
+            const status = (error.toJSON() as any).status
+
+            if (status === 403) {
+                onLogout!()
+            }
+        }
+    }, [])
+
+    const getStays = useCallback(async () => {
+        try {
+            const { data } = await axios.get(`${API_URL}/doctor/stays/`)
+            setStays(data)
+        } catch (e) {
+            const error = e as AxiosError
+            const status = (error.toJSON() as any).status
+
+            if (status === 403) {
+                onLogout!()
+            }
+        }
+    }, [])
+
+    const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        await getStays()
+        setRefreshing(false)
+    }, []);
+
     useEffect(() => {
-        async function loadPatients() {
-            try {
-                const res = await axios.get(`${API_URL}/stays/`)
-                setStays(res.data)
-            } catch (e) {
-                const error = e as AxiosError
-                const status = (error.toJSON() as any).status
-
-                if (status === 403) {
-                    onLogout!()
-                }
-            }
-        }
-
-        async function loadDoctor() {
-            try {
-                const res = await axios.get(`${API_URL}/doctor/`)
-                setFirstName(res.data.firstName)
-            } catch (e) {
-                const error = e as AxiosError
-                const status = (error.toJSON() as any).status
-
-                if (status === 403) {
-                    onLogout!()
-                }
-            }
-        }
-
         async function load() {
             setLoading(true)
-            await loadDoctor()
-            await loadPatients()
+            await getDoctor()
+            await getStays()
             setLoading(false)
         }
 
@@ -90,12 +97,20 @@ export default function HomeScreen({ navigation }: NativeStackScreenProps<Screen
                 <Text variant='titleMedium'>Vos patients du jour</Text>
                 <Searchbar mode='bar' onChangeText={setSearch} value={search} placeholder='Cherchez un patient...' inputStyle={{ minHeight: 0 }} style={{ borderRadius: 5, height: 40 }} />
             </View>
-            <ScrollView style={{
-                flex: 1
-            }} contentContainerStyle={{
-                flexGrow: 1,
-                overflow: 'visible'
-            }}>
+            <ScrollView
+                style={{
+                    flex: 1
+                }}
+
+                refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+                }
+
+                contentContainerStyle={{
+                    flexGrow: 1,
+                    overflow: 'visible'
+                }}
+            >
                 {visibleStays.length ?
                     visibleStays.map(stay => (
                         <Patient key={stay.id} stay={stay} navigation={navigation} />
