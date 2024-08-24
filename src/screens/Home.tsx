@@ -19,26 +19,11 @@ interface Stay {
 
 export default function HomeScreen({ navigation }: NativeStackScreenProps<ScreensParamsList, 'Home'>) {
     const [stays, setStays] = useState<Stay[]>([])
-    const [firstName, setFirstName] = useState('')
     const [loading, setLoading] = useState(true)
     const [refreshing, setRefreshing] = useState(false)
     const [search, setSearch] = useState("")
 
-    const { onLogout } = useAuth()
-
-    const getDoctor = useCallback(async () => {
-        try {
-            const { data } = await axios.get<{ firstName: string }>(`${API_URL}/doctor/`)
-            setFirstName(data.firstName)
-        } catch (e) {
-            const error = e as AxiosError
-            const status = (error.toJSON() as any).status
-
-            if (status === 403) {
-                onLogout!()
-            }
-        }
-    }, [])
+    const { authState, onLogout } = useAuth()
 
     const getStays = useCallback(async () => {
         try {
@@ -63,7 +48,6 @@ export default function HomeScreen({ navigation }: NativeStackScreenProps<Screen
     useEffect(() => {
         async function load() {
             setLoading(true)
-            await getDoctor()
             await getStays()
             setLoading(false)
         }
@@ -92,7 +76,7 @@ export default function HomeScreen({ navigation }: NativeStackScreenProps<Screen
             padding: 20,
             gap: 15
         }}>
-            <Text variant='titleLarge'>Bonjour, Dr. {firstName}!</Text>
+            <Text variant='titleLarge'>Bonjour, Dr. {authState?.firstName}!</Text>
             <View style={{ gap: 10 }}>
                 <Text variant='titleMedium'>Vos patients du jour</Text>
                 <Searchbar mode='bar' onChangeText={setSearch} value={search} placeholder='Cherchez un patient...' inputStyle={{ minHeight: 0 }} style={{ borderRadius: 5, height: 40 }} />
